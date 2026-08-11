@@ -302,6 +302,15 @@
     const totalHoney = totalFlour * pctHoney;
     const totalYeast = totalFlour * pctYeast;
 
+    // Preferment calculations (ensure yeast vars defined before they're used)
+    const pFlour = usePoolish ? totalFlour * poolishPct : 0;
+    const pWater = pFlour;
+    const pYeast = usePoolish ? 0.2 : 0;
+
+    const bFlour = useBiga ? totalFlour * bigaPct : 0;
+    const bWater = useBiga ? bFlour * bigaHydration : 0;
+    const bYeast = useBiga ? 0.15 : 0;
+
     // Validate preferment percentages
     const combinedPref = (usePoolish ? poolishPct : 0) + (useBiga ? bigaPct : 0);
     const prefWarningEl = document.getElementById('prefWarning');
@@ -310,16 +319,6 @@
       prefWarningEl.innerText = 'Warning: Poolish + Biga percentages exceed 100%. Main flour would be negative — reduce preferment %s.';
       prefWarningEl.style.display = 'block';
     }
-
-    // Poolish (100% hydration)
-    const pFlour = usePoolish ? totalFlour * poolishPct : 0;
-    const pWater = pFlour;
-    const pYeast = usePoolish ? 0.2 : 0;
-
-    // Biga (stiffer, configurable hydration)
-    const bFlour = useBiga ? totalFlour * bigaPct : 0;
-    const bWater = useBiga ? bFlour * bigaHydration : 0;
-    const bYeast = useBiga ? 0.15 : 0;
 
     // Tangzhong
     let tzFlour = 0, tzMilk = 0;
@@ -344,7 +343,7 @@
     // Update UI totals
     document.getElementById('totalBadge').textContent = `Total Dough Weight: ${Math.round(totalDough)}g`;
 
-    // Poolish
+    // Poolish outputs
     if (usePoolish) {
       document.getElementById('poolishCard').style.display = 'block';
       document.getElementById('pFlour').textContent = pFlour.toFixed(1) + 'g';
@@ -361,7 +360,7 @@
       document.getElementById('pTotal2').textContent = '0.0g';
     }
 
-    // Biga
+    // Biga outputs
     if (useBiga) {
       document.getElementById('bigaCard').style.display = 'block';
       document.getElementById('bFlour').textContent = bFlour.toFixed(1) + 'g';
@@ -382,7 +381,7 @@
       document.getElementById('bTotal2').textContent = '0.0g';
     }
 
-    // Tangzhong already handled above
+    // Tangzhong totals already set above
 
     // Main dough outputs
     document.getElementById('mFlour').textContent = mFlour.toFixed(1) + 'g';
@@ -408,8 +407,6 @@
     }
 
     // Yeast (adjust for preferments and cold proof)
-    const pYeast = usePoolish ? 0.2 : 0;
-    const bYeast = useBiga ? 0.15 : 0;
     let coldFactor = 1.0;
     if (useColdProof && coldHours >= 4) {
       if (coldHours <= 4) coldFactor = 1.0;
