@@ -111,6 +111,29 @@
             </div>
           </div>
 
+          <!-- Oil & Honey controls -->
+          <div class="input-group" style="margin-top:8px; display:grid; grid-template-columns: 1fr 1fr; gap:12px;">
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <label for="includeOil" style="margin:0">Include Oil</label>
+                <label class="switch"><input type="checkbox" id="includeOil" checked><span class="slider"></span></label>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+                <input type="number" id="oilPct" value="2.5" min="0" max="50" step="0.1" style="width:80px" /> <div class="muted">Oil % of flour</div>
+              </div>
+            </div>
+
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between">
+                <label for="includeHoney" style="margin:0">Include Honey</label>
+                <label class="switch"><input type="checkbox" id="includeHoney" checked><span class="slider"></span></label>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+                <input type="number" id="honeyPct" value="1.5" min="0" max="50" step="0.1" style="width:80px" /> <div class="muted">Honey % of flour</div>
+              </div>
+            </div>
+          </div>
+
           <!-- Cold proof control -->
           <div style="margin-top:12px">
             <div style="display:flex;align-items:center;justify-content:space-between">
@@ -138,6 +161,7 @@
             <li><span>Bread Flour</span> <span class="weight" id="pFlour">105.4g</span></li>
             <li><span>Water (Room Temp)</span> <span class="weight" id="pWater">105.4g</span></li>
             <li><span>Instant Yeast</span> <span id="pYeastLabel">Pinch (~0.2g)</span></li>
+            <li id="pTotalRow"><span>Poolish Total</span> <span class="weight" id="pTotal">210.8g</span></li>
           </ul>
         </div>
 
@@ -150,6 +174,7 @@
             <li><span>Bread Flour</span> <span class="weight" id="bFlour">0.0g</span></li>
             <li><span>Water</span> <span class="weight" id="bWater">0.0g</span></li>
             <li><span>Instant Yeast</span> <span id="bYeastLabel">~0.1g</span></li>
+            <li id="bTotalRow2" style="display:none"><span>Biga Total</span> <span class="weight" id="bTotal">0.0g</span></li>
           </ul>
         </div>
 
@@ -161,6 +186,7 @@
           <ul class="ingredient-list">
             <li><span>Bread Flour</span> <span class="weight" id="tzFlour">84.3g</span></li>
             <li><span>Whole Milk</span> <span class="weight" id="tzMilk">421.6g</span></li>
+            <li id="tzTotalRow" style="display:flex"><span>Tangzhong Total</span> <span class="weight" id="tzTotal">505.9g</span></li>
           </ul>
         </div>
 
@@ -169,15 +195,15 @@
             <span>3. Final Dough Mix</span>
             <span class="muted">Bake Day</span>
           </div>
-          <ul class="ingredient-list">
-            <li><span>All Poolish</span> <span class="weight" id="pTotal">210.8g</span></li>
-            <li id="bTotalRow" style="display:none"><span>All Biga</span> <span class="weight" id="bTotal">0.0g</span></li>
-            <li id="tzTotalRow"><span>All Tangzhong</span> <span class="weight" id="tzTotal">505.9g</span></li>
+          <ul class="ingredient-list" id="finalList">
+            <li><span>All Poolish</span> <span class="weight" id="pTotal2">210.8g</span></li>
+            <li id="bTotalRowFinal" style="display:none"><span>All Biga</span> <span class="weight" id="bTotal2">0.0g</span></li>
+            <li id="tzTotalRowFinal"><span>All Tangzhong</span> <span class="weight" id="tzTotal2">505.9g</span></li>
             <li><span>Main Bread Flour</span> <span class="weight" id="mFlour">864.4g</span></li>
             <li><span>Cool Water</span> <span class="weight" id="mWater">211.0g</span></li>
             <li><span>Fine Sea Salt</span> <span class="weight" id="mSalt">21.1g</span></li>
-            <li><span>Extra Virgin Olive Oil</span> <span class="weight" id="mOil">26.4g</span></li>
-            <li><span>Honey / Malt Syrup</span> <span class="weight" id="mHoney">15.8g</span></li>
+            <li id="mOilRow"><span>Olive Oil</span> <span class="weight" id="mOil">26.4g</span></li>
+            <li id="mHoneyRow"><span>Honey</span> <span class="weight" id="mHoney">15.8g</span></li>
             <li><span>Instant Yeast</span> <span class="weight" id="mYeast">4.7g</span></li>
           </ul>
         </div>
@@ -225,38 +251,38 @@
   </div>
 
 <script>
+  'use strict';
+
   // PWA install prompt capture
   let deferredPrompt = null;
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
-    // show the prompt button (if visible)
   });
 
   // Register service worker (no-op if already registered)
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/service-worker.js')
-      .catch(()=>{ /* ignore registration errors for now */ });
+    navigator.serviceWorker.register('/service-worker.js').catch(()=>{ /* ignore registration errors for now */ });
   }
 
-  // Calculator logic (same as before)
+  // Calculator logic
   function calculate() {
     const numLoaves = Number(document.getElementById('numLoaves').value) || 0;
     const weightPerLoaf = Number(document.getElementById('weightPerLoaf').value) || 0;
-    const useTangzhongEl = document.getElementById('useTangzhong');
-    const useTangzhong = useTangzhongEl.checked;
-
-    const usePoolishEl = document.getElementById('usePoolish');
-    const usePoolish = usePoolishEl.checked;
+    const useTangzhong = document.getElementById('useTangzhong').checked;
+    const usePoolish = document.getElementById('usePoolish').checked;
     const poolishPct = (Number(document.getElementById('poolishPct').value) || 0) / 100;
-
-    const useBigaEl = document.getElementById('useBiga');
-    const useBiga = useBigaEl.checked;
+    const useBiga = document.getElementById('useBiga').checked;
     const bigaPct = (Number(document.getElementById('bigaPct').value) || 0) / 100;
     const bigaHydration = (Number(document.getElementById('bigaHydration').value) || 60) / 100;
-
     const useColdProof = document.getElementById('useColdProof').checked;
     const coldHours = Number(document.getElementById('coldHours').value) || 0;
+
+    // oil/honey inputs
+    const includeOil = document.getElementById('includeOil').checked;
+    const includeHoney = document.getElementById('includeHoney').checked;
+    const pctOil = includeOil ? ((Number(document.getElementById('oilPct').value) || 2.5) / 100) : 0;
+    const pctHoney = includeHoney ? ((Number(document.getElementById('honeyPct').value) || 1.5) / 100) : 0;
 
     const totalDough = numLoaves * weightPerLoaf;
 
@@ -264,11 +290,10 @@
     const pctFlour = 1.00;
     const pctHydration = 0.70;
     const pctSalt = 0.020;
-    const pctOil = 0.025;
-    const pctHoney = 0.015;
     const pctYeast = 0.0047;
 
-    const totalPct = pctFlour + pctHydration + pctSalt + pctOil + pctHoney + pctYeast;
+    // totalPct must include oil/honey dynamically
+    const totalPct = pctFlour + pctHydration + pctSalt + pctYeast + pctOil + pctHoney;
 
     const totalFlour = totalDough / totalPct;
     const totalLiquid = totalFlour * pctHydration;
@@ -277,7 +302,7 @@
     const totalHoney = totalFlour * pctHoney;
     const totalYeast = totalFlour * pctYeast;
 
-    // Preferment percents validation
+    // Validate preferment percentages
     const combinedPref = (usePoolish ? poolishPct : 0) + (useBiga ? bigaPct : 0);
     const prefWarningEl = document.getElementById('prefWarning');
     prefWarningEl.style.display = 'none';
@@ -291,24 +316,23 @@
     const pWater = pFlour;
     const pYeast = usePoolish ? 0.2 : 0;
 
-    // Biga (configurable hydration)
+    // Biga (stiffer, configurable hydration)
     const bFlour = useBiga ? totalFlour * bigaPct : 0;
     const bWater = useBiga ? bFlour * bigaHydration : 0;
     const bYeast = useBiga ? 0.15 : 0;
 
     // Tangzhong
-    let tzFlour = 0;
-    let tzMilk = 0;
+    let tzFlour = 0, tzMilk = 0;
     if (useTangzhong) {
       tzFlour = totalFlour * 0.08;
       tzMilk = tzFlour * 5.0;
       document.getElementById('tangzhongCard').style.display = 'block';
       document.getElementById('tzTotalRow').style.display = 'flex';
-      useTangzhongEl.setAttribute('aria-checked', 'true');
+      document.getElementById('tzTotal2').textContent = (tzFlour + tzMilk).toFixed(1) + 'g';
     } else {
       document.getElementById('tangzhongCard').style.display = 'none';
       document.getElementById('tzTotalRow').style.display = 'none';
-      useTangzhongEl.setAttribute('aria-checked', 'false');
+      document.getElementById('tzTotal2').textContent = '0.0g';
     }
 
     // Main dough flour and water (clamped to zero)
@@ -317,56 +341,75 @@
     let mWater = totalLiquid - pWater - bWater - tzMilk;
     if (mWater < 0) mWater = 0;
 
-    // Update totals in UI
+    // Update UI totals
     document.getElementById('totalBadge').textContent = `Total Dough Weight: ${Math.round(totalDough)}g`;
 
-    // Poolish outputs
+    // Poolish
     if (usePoolish) {
       document.getElementById('poolishCard').style.display = 'block';
       document.getElementById('pFlour').textContent = pFlour.toFixed(1) + 'g';
       document.getElementById('pWater').textContent = pWater.toFixed(1) + 'g';
       document.getElementById('pYeastLabel').textContent = `Pinch (~${pYeast.toFixed(1)}g)`;
       document.getElementById('pTotal').textContent = (pFlour + pWater).toFixed(1) + 'g';
+      document.getElementById('pTotal2').textContent = (pFlour + pWater).toFixed(1) + 'g';
     } else {
       document.getElementById('poolishCard').style.display = 'none';
       document.getElementById('pFlour').textContent = '0.0g';
       document.getElementById('pWater').textContent = '0.0g';
       document.getElementById('pYeastLabel').textContent = '—';
       document.getElementById('pTotal').textContent = '0.0g';
+      document.getElementById('pTotal2').textContent = '0.0g';
     }
 
-    // Biga outputs
+    // Biga
     if (useBiga) {
       document.getElementById('bigaCard').style.display = 'block';
       document.getElementById('bFlour').textContent = bFlour.toFixed(1) + 'g';
       document.getElementById('bWater').textContent = bWater.toFixed(1) + 'g';
       document.getElementById('bYeastLabel').textContent = `~${bYeast.toFixed(1)}g`;
-      document.getElementById('bTotalRow').style.display = 'flex';
+      document.getElementById('bTotalRow2').style.display = 'flex';
       document.getElementById('bTotal').textContent = (bFlour + bWater).toFixed(1) + 'g';
+      document.getElementById('bTotalRowFinal').style.display = 'flex';
+      document.getElementById('bTotal2').textContent = (bFlour + bWater).toFixed(1) + 'g';
     } else {
       document.getElementById('bigaCard').style.display = 'none';
       document.getElementById('bFlour').textContent = '0.0g';
       document.getElementById('bWater').textContent = '0.0g';
       document.getElementById('bYeastLabel').textContent = '—';
-      document.getElementById('bTotalRow').style.display = 'none';
+      document.getElementById('bTotalRow2').style.display = 'none';
       document.getElementById('bTotal').textContent = '0.0g';
+      document.getElementById('bTotalRowFinal').style.display = 'none';
+      document.getElementById('bTotal2').textContent = '0.0g';
     }
 
-    // Tangzhong outputs
-    if (useTangzhong) {
-      document.getElementById('tzFlour').textContent = tzFlour.toFixed(1) + 'g';
-      document.getElementById('tzMilk').textContent = tzMilk.toFixed(1) + 'g';
-      document.getElementById('tzTotal').textContent = (tzFlour + tzMilk).toFixed(1) + 'g';
-    }
+    // Tangzhong already handled above
 
     // Main dough outputs
     document.getElementById('mFlour').textContent = mFlour.toFixed(1) + 'g';
     document.getElementById('mWater').textContent = mWater.toFixed(1) + 'g';
     document.getElementById('mSalt').textContent = totalSalt.toFixed(1) + 'g';
-    document.getElementById('mOil').textContent = totalOil.toFixed(1) + 'g';
-    document.getElementById('mHoney').textContent = totalHoney.toFixed(1) + 'g';
 
-    // Cold-proof adjustment to main yeast
+    // Oil
+    if (includeOil && totalOil > 0) {
+      document.getElementById('mOilRow').style.display = 'flex';
+      document.getElementById('mOil').textContent = totalOil.toFixed(1) + 'g';
+    } else {
+      document.getElementById('mOilRow').style.display = 'none';
+      document.getElementById('mOil').textContent = '0.0g';
+    }
+
+    // Honey
+    if (includeHoney && totalHoney > 0) {
+      document.getElementById('mHoneyRow').style.display = 'flex';
+      document.getElementById('mHoney').textContent = totalHoney.toFixed(1) + 'g';
+    } else {
+      document.getElementById('mHoneyRow').style.display = 'none';
+      document.getElementById('mHoney').textContent = '0.0g';
+    }
+
+    // Yeast (adjust for preferments and cold proof)
+    const pYeast = usePoolish ? 0.2 : 0;
+    const bYeast = useBiga ? 0.15 : 0;
     let coldFactor = 1.0;
     if (useColdProof && coldHours >= 4) {
       if (coldHours <= 4) coldFactor = 1.0;
@@ -380,9 +423,9 @@
 
     const baseMainYeast = Math.max(0.0, totalYeast - pYeast - bYeast);
     const adjustedMainYeast = Math.max(0.5, baseMainYeast * coldFactor);
-
     document.getElementById('mYeast').textContent = adjustedMainYeast.toFixed(1) + 'g';
 
+    // Cold note
     const coldNoteEl = document.getElementById('coldNote');
     if (useColdProof && coldHours >= 4) {
       const pct = Math.round((1 - coldFactor) * 100);
@@ -394,4 +437,112 @@
     }
   }
 
-  // PWA st
+  // PWA status & control functions
+  async function updateSWStatus() {
+    const swSupported = 'serviceWorker' in navigator;
+    document.getElementById('swSupported').textContent = swSupported ? 'Yes' : 'No';
+
+    if (!swSupported) {
+      document.getElementById('swRegistered').textContent = 'No';
+      document.getElementById('swState').textContent = 'n/a';
+      document.getElementById('swScope').textContent = 'n/a';
+      document.getElementById('cacheList').textContent = '(not supported)';
+      return;
+    }
+
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (reg) {
+        document.getElementById('swRegistered').textContent = 'Yes';
+        document.getElementById('swScope').textContent = reg.scope || 'unknown';
+        const sw = reg.installing || reg.waiting || reg.active;
+        document.getElementById('swState').textContent = sw ? (sw.state || 'unknown') : 'no active worker';
+      } else {
+        document.getElementById('swRegistered').textContent = 'No';
+        document.getElementById('swState').textContent = 'none';
+        document.getElementById('swScope').textContent = '—';
+      }
+    } catch (e) {
+      document.getElementById('swRegistered').textContent = 'Error';
+      document.getElementById('swState').textContent = 'Error';
+      document.getElementById('swScope').textContent = 'Error';
+    }
+
+    // list caches
+    if ('caches' in window) {
+      try {
+        const cacheNames = await caches.keys();
+        if (cacheNames.length === 0) {
+          document.getElementById('cacheList').textContent = '(no caches)';
+        } else {
+          let out = '';
+          for (const name of cacheNames) {
+            out += `Cache: ${name}\n`;
+            try {
+              const cache = await caches.open(name);
+              const requests = await cache.keys();
+              for (const req of requests) out += `  ${req.url}\n`;
+            } catch (e) {
+              out += `  (error reading cache ${name})\n`;
+            }
+          }
+          document.getElementById('cacheList').textContent = out;
+        }
+      } catch (e) {
+        document.getElementById('cacheList').textContent = '(error listing caches)';
+      }
+    } else {
+      document.getElementById('cacheList').textContent = '(caches not available)';
+    }
+  }
+
+  // Button handlers & wiring
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btnListCaches').addEventListener('click', updateSWStatus);
+    document.getElementById('btnClearCaches').addEventListener('click', async () => {
+      if (!('caches' in window)) return alert('Cache API not available');
+      const names = await caches.keys();
+      await Promise.all(names.map(n => caches.delete(n)));
+      await updateSWStatus();
+      alert('Caches cleared. Reload the page to re-install the service worker.');
+    });
+
+    document.getElementById('btnUnregister').addEventListener('click', async () => {
+      if (!('serviceWorker' in navigator)) return alert('Service Worker not supported');
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) return alert('No service worker registered.');
+      await reg.unregister();
+      await updateSWStatus();
+      alert('Service worker unregistered. Reload the page to register a fresh one.');
+    });
+
+    document.getElementById('btnPromptInstall').addEventListener('click', async () => {
+      if (!deferredPrompt) return alert('Install prompt not available. Chrome decides when to show it.');
+      deferredPrompt.prompt();
+      const choice = await deferredPrompt.userChoice;
+      alert('User choice: ' + choice.outcome);
+      deferredPrompt = null;
+      await updateSWStatus();
+    });
+
+    // Wire calculator inputs
+    const inputs = ['numLoaves', 'weightPerLoaf', 'poolishPct', 'bigaPct', 'bigaHydration', 'coldHours', 'oilPct', 'honeyPct'];
+    inputs.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('input', calculate);
+    });
+    ['useTangzhong', 'usePoolish', 'useBiga', 'useColdProof', 'includeOil', 'includeHoney'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', calculate);
+    });
+
+    // initial runs
+    calculate();
+    setTimeout(updateSWStatus, 1200);
+  });
+
+  // refresh SW status when page becomes visible
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) updateSWStatus(); });
+</script>
+</body>
+</html>
